@@ -26,7 +26,6 @@ if (isset($_POST['formconnexion'])) {
 
         if ($userExist == 1) {
             $userinfo = $requser->fetch();
-           echo $userinfo['mdp'];
              //verifier le hachage
            $mdpCorrect = password_verify($passwordConnect, $userinfo['mdp']);
            //echo $mdpCorrect;

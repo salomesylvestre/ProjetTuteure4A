@@ -23,21 +23,37 @@ if (isset($_POST['formrdv'])) {
         !empty($_POST['heure']) and !empty($_POST['heure_dep']) and !empty($_POST['adresse_dep'])
         and !empty($_POST['heure_ret'])
     ) {
-if ($date>date("Y-d-m")){
+if ($date>date("Y-m-d")){
         if ($heure_dep < $heure) {
             if ($heure < $heure_ret) {
                 $insertRDV = $bdd->prepare("INSERT INTO RDV(LIEU_DEPART,LIEU_RDV,MOTIF,DATE_RDV,HEURE_DEPART,HEURE_RETOUR,HEURE_RDV) values(?,?,?,?,?,?,?) ");
                 $insertRDV->execute(array($adresse_dep, $lieu, $motif, $date, $heure_dep, $heure_ret, $heure));
-                header('Location: suivi.php?=' . $userinfo['id_type']);
+                $idRDV= $bdd->lastInsertId();
+                $insertGere = $bdd->prepare("INSERT INTO GERE(UTILISATEUR_ID_UTILISATEUR,RDV_ID_RDV) values(?,?)");
+                $insertGere->execute(array($_SESSION['id_utilisateur'],$idRDV));
+
+                // $_SESSION['lieu_depart'] = $insertRDV['LIEU_DEPART'];
+                // $_SESSION['lieu_rdv'] = $insertRDV['LIEU_RDV'];
+                // $_SESSION['motif'] = $insertRDV['MOTIF'];
+                // $_SESSION['date_rdv'] = $insertRDV['DATE_RDV'];
+                // $_SESSION['heure_depart'] = $insertRDV['HEURE_DEPART'];
+                // $_SESSION['heure_retour'] = $insertRDV['HEURE_RETOUR'];
+                // $_SESSION['heure_rdv'] = $insertRDV['HEURE_RDV'];
+                
+
+                header('Location: suivi.php');
             } else {
                 $erreur = "L'heure de retour doit être après l'heure du rendez-vous";
             }
         } else {
-
             $erreur = "L'heure de départ doit être avant l'heure du rendez-vous";
         }
     }
-    else $erreur="La date que vous avez choisi est déjà passée !";
+    else {$erreur="La date que vous avez choisi est déjà passée !";
+    
+    echo $date;
+    echo date("Y-d-m");}
+    
 }}
 
 

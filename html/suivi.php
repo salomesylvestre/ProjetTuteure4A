@@ -7,7 +7,32 @@ try {
 } catch (Exception $e) {
     // En cas d'erreur, on affiche un message et on arrête tout
     die('Erreur : ' . $e->getMessage());
-} ?>
+}
+
+//requete pour mes prochains rdv
+$reqRdv = $bdd->prepare("SELECT id_rdv, lieu_depart,lieu_rdv,motif,date_rdv,heure_depart, heure_retour,heure_rdv from rdv 
+inner join gere on id_rdv=RDV_ID_RDV 
+inner join utilisateur on id_utilisateur=UTILISATEUR_ID_UTILISATEUR
+where date_rdv>=date(now()) and id_utilisateur=? order by date_rdv");
+$reqRdv->execute(array($_SESSION['id_utilisateur']));
+
+//requete pour mes rdv passés
+$reqRdvPasses = $bdd->prepare("SELECT id_rdv, lieu_depart,lieu_rdv,motif,date_rdv,heure_depart, heure_retour,heure_rdv from rdv 
+inner join gere on id_rdv=RDV_ID_RDV 
+inner join utilisateur on id_utilisateur=UTILISATEUR_ID_UTILISATEUR
+where date_rdv<date(now()) and id_utilisateur=? order by date_rdv");
+$reqRdvPasses->execute(array($_SESSION['id_utilisateur']));
+
+
+//Notification qui rappelle le nombre de rdv durant les 7 prochains jours
+$reqRdvNot = $bdd->prepare("SELECT id_rdv, lieu_depart,lieu_rdv,motif,date_rdv,heure_depart, heure_retour,heure_rdv from rdv 
+inner join gere on id_rdv=RDV_ID_RDV 
+inner join utilisateur on id_utilisateur=UTILISATEUR_ID_UTILISATEUR
+where date_rdv>=date(now()) and date_rdv<=(date(now())+6) and id_utilisateur=? order by date_rdv");
+$reqRdvNot->execute(array($_SESSION['id_utilisateur']));
+$RDVnot = $reqRdvNot->rowCount();
+
+?>
 
 
 
@@ -15,7 +40,7 @@ try {
 
 <head>
 
-<meta charset="utf-8">
+    <meta charset="utf-8">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/style.css">
@@ -33,8 +58,7 @@ try {
         <a class="navbar-brand" href="#">
             <img src="../image/logo64.png" alt="" class="rounded-circle">
         </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
-         aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon">
                 <i class="fa fa-bars fa-lg" style="color:#e3001b; font-size:28px;"></i>
             </span>
@@ -80,6 +104,7 @@ try {
     </nav>
 
 </head>
+
 <body>
     <br>
     <br>
@@ -88,78 +113,68 @@ try {
             <div class="container-fluid">
                 <h4>
                     <i class="fas fa-check"></i> Mes derniers rendez-vous</h4>
-                    <div class="separator"></div>
-                    <br>
-                    
-                <form class="form shadow-inset-center" >
-                    <div class="form-group">
-                        <label for="motif"> Motif: Dentiste </label>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="form-group">
-                                <label for="date"> Date: 13/02/2019 </label>
+                <div class="separator"></div>
+                <br>
+
+                <?php while ($RDVinfoPasses = $reqRdvPasses->fetch()) {
+                ?>
+                    <form class="form shadow-inset-center">
+                        <div class="form-group">
+                            <label for="motif"> Motif: <?= $RDVinfoPasses['motif'] ?> </label>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="date"> Date: <?= $RDVinfoPasses['date_rdv'] ?></label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="heure"> Heure: <?= $RDVinfoPasses['heure_rdv'] ?> </label>
+                                </div>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="form-group">
-                                <label for="heure"> Heure: 13h00 </label>
-                            </div>
+                        <div class="form-group">
+                            <label for="lieu"> Lieu: <?= $RDVinfoPasses['lieu_rdv'] ?> </label>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="lieu"> Lieu: Castres </label>
-                    </div>
-                </form>
-                <form class="form shadow-inset-center">
-                    <div class="form-group">
-                        <label for="motif"> Motif: Kinésithérapeute </label>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="form-group">
-                                <label for="date"> Date: 25/01/2019</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-group">
-                                <label for="heure"> Heure: 15h00 </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="lieu"> Lieu: Revel </label>
-                    </div>
-                </form>
+                    </form>
+                <?php
+                } ?>
             </div>
         </div>
+
+
         <div class="col">
             <div class="col">
                 <div class="container-fluid">
                     <h4>
                         <i class="fas fa-car-side fa-lg"></i> Mes prochains rendez-vous</h4>
-                        <div class="separator"></div>
-                        <br>
-                    <form class="form shadow-inset-center">
-                        <div class="form-group">
-                            <label for="motif"> Motif: Médecin </label>
-                        </div>
-                        <div class="row">
-                            <div class="col">
-                                <div class="form-group">
-                                    <label for="date"> Date: 25/06/2020 </label>
+                    <div class="separator"></div>
+                    <br>
+                    <?php while ($RDVinfo = $reqRdv->fetch()) {
+                    ?>
+                        <form class="form shadow-inset-center">
+                            <div class="form-group">
+                                <label for="motif"> Motif: <?= $RDVinfo['motif'] ?> </label>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="date"> Date: <?= $RDVinfo['date_rdv'] ?></label>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="heure"> Heure du rdv: <?= $RDVinfo['heure_rdv'] ?> </label>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col">
-                                <div class="form-group">
-                                    <label for="heure"> Heure: 12h30 </label>
-                                </div>
+                            <div class="form-group">
+                                <label for="lieu"> Lieu du rdv: <?= $RDVinfo['lieu_rdv'] ?> </label>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="lieu"> Lieu : Gaillac </label>
-                        </div>
-                    </form>
+                        </form>
+                    <?php
+                    } ?>
                 </div>
             </div>
         </div>
@@ -167,16 +182,25 @@ try {
             <div class="container-fluid">
                 <h4>
                     <i class="fas fa-bell"></i> Notifications</h4>
-                    <div class="separator"></div>
+                <div class="separator"></div>
                 <br>
                 <div class="row">
                     <form class="form shadow-inset-center">
                         <div class="form-group">
-                            <label>N'oubliez pas le prochain rendez-vous ! </label>
+                            <label><?php if ($RDVnot = !0) { ?>
+                                    Vous avez <?= $RDVnot ?> rendez-vous durant ces 7 prochains jours !
+                                <?php
+                                    } ?>
+                                    <?php if ($RDVnot = 0) { ?>
+                                    Vous n'avez pas de rendez-vous durant ces 7 prochains jours !
+                                <?php
+                                    } ?>
+                            </label>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
 </body>
+
 </html>
